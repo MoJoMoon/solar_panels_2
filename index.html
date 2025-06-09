@@ -309,7 +309,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 100;
+            z-index: 1000;
             pointer-events: auto;
         }
 
@@ -611,7 +611,12 @@
         };
 
         function startSim(role) {
-            document.getElementById('tutorialScreen').style.display = 'none';
+            // Hide the tutorial screen
+            const tutorialScreen = document.getElementById('tutorialScreen');
+            tutorialScreen.style.display = 'none';
+            // Remove it from DOM to ensure it doesn't interfere with VR
+            tutorialScreen.remove();
+            
             init();
         }
 
@@ -1402,11 +1407,19 @@
             navigator.xr.requestSession('immersive-vr').then((session) => {
                 vrSession = session;
                 renderer.xr.setSession(session);
+                
+                // Hide ALL UI elements when entering VR
                 document.querySelector('.ui-layer').style.display = 'none';
+                document.getElementById('tutorialScreen').style.display = 'none';
+                document.getElementById('challengeOverlay').style.display = 'none';
+                
+                // Ensure the app container doesn't block VR
+                document.getElementById('app').style.zIndex = '0';
                 
                 session.addEventListener('end', () => {
                     vrSession = null;
                     document.querySelector('.ui-layer').style.display = 'block';
+                    document.getElementById('app').style.zIndex = '1';
                 });
             }).catch((error) => {
                 alert('Failed to start VR session: ' + error.message);
