@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SolarMaster Pro VR Trainer - Seasonal Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #87CEEB 0%, #FFF8DC 50%, #FFE4B5 100%);
+        }
+
+        #app {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: grab;
+        }
+
+        #canvas:active {
+            cursor: grabbing;
+        }
+
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .control-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(15, 25, 35, 0.95);
+            color: white;
+            padding: 25px;
+            border-radius: 20px;
+            pointer-events: auto;
+            backdrop-filter: blur(20px);
+            min-width: 350px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .status-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(15, 25, 35, 0.95);
+            color: white;
+            padding: 25px;
+            border-radius: 20px;
+            pointer-events: auto;
+            backdrop-filter: blur(20px);
+            min-width: 320px;
+            border: 2px solid rgba(34, 197, 94, 0.3);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .panel-library {
+            position: absolute;
+            left: 20px;
+            bottom: 20px;
+            background: rgba(15, 25, 35, 0.95);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            pointer-events: auto;
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(255, 165, 0, 0.3);
+            min-width: 280px;
+        }
+
+        .financial-display {
+            position: absolute;
+            right: 20px;
+            bottom: 20px;
+            background: rgba(15, 25, 35, 0.95);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            pointer-events: auto;
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(0, 255, 127, 0.3);
+            min-width: 300px;
+        }
+
+        .bottom-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            pointer-events: auto;
+            background: rgba(15, 25, 35, 0.9);
+            padding: 15px 25px;
+            border-radius: 25px;
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .action-button {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #000;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .action-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 215, 0, 0.5);
+        }
+
+        .action-button.active {
+            background: linear-gradient(135deg, #00FF7F, #32CD32);
+        }
+
+        .vr-button {
+            background: linear-gradient(135deg, #FF1493, #FF69B4) !important;
+        }
+
+        .slider-container {
+            margin: 20px 0;
+        }
+
+        .slider-label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #FFD700;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        .slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(to right, #333, #555);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.5);
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .status-value {
+            font-weight: 700;
+            color: #00FF7F;
+            font-size: 18px;
+        }
+
+        .panel-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin: 8px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .panel-item:hover {
+            background: rgba(255, 215, 0, 0.1);
+            border-color: rgba(255, 215, 0, 0.3);
+        }
+
+        .panel-item.selected {
+            background: rgba(0, 255, 127, 0.1);
+            border-color: rgba(0, 255, 127, 0.5);
+        }
+
+        .panel-icon {
+            width: 40px;
+            height: 30px;
+            background: linear-gradient(135deg, #4A90A4, #2E5266);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .financial-metric {
+            background: rgba(0, 255, 127, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #00FF7F;
+        }
+
+        .metric-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #00FF7F;
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: #B0B0B0;
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00FF7F, #32CD32);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        .sun-indicator {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 215, 0, 0.9);
+            color: #000;
+            padding: 15px 25px;
+            border-radius: 25px;
+            font-weight: 700;
+            text-transform: uppercase;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+        }
+
+        .season-indicator {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 25, 35, 0.9);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            text-transform: uppercase;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .tutorial-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            pointer-events: auto;
+        }
+
+        .tutorial-content {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 600px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .tutorial-button {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 700;
+            margin: 10px;
+            text-transform: uppercase;
+        }
+
+        .challenge-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, rgba(255, 69, 0, 0.95), rgba(255, 140, 0, 0.95));
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            pointer-events: auto;
+            max-width: 500px;
+            z-index: 50;
+            display: none;
+        }
+
+        h3 {
+            margin-bottom: 20px;
+            color: #FFD700;
+            text-align: center;
+            font-size: 20px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <canvas id="canvas"></canvas>
+        
+        <!-- Tutorial Screen -->
+        <div class="tutorial-screen" id="tutorialScreen">
+            <div class="tutorial-content">
+                <h1 style="color: #FFD700; margin-bottom: 20px; font-size: 32px;">🌞 Welcome to SolarMaster Pro VR!</h1>
+                <p style="font-size: 18px; margin-bottom: 25px; line-height: 1.6;">
+                    Design and optimize solar panel installations across all four seasons in this interactive 3D environment.
+                </p>
+                <div style="margin: 30px 0;">
+                    <h3 style="color: #00FF7F; margin-bottom: 15px;">Choose Your Role:</h3>
+                    <button class="tutorial-button" onclick="startSim('installer')">🔧 Solar Installer</button>
+                    <button class="tutorial-button" onclick="startSim('engineer')">⚡ System Engineer</button>
+                    <button class="tutorial-button" onclick="startSim('analyst')">📊 Energy Analyst</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="ui-layer">
+            <!-- Sun Indicator -->
+            <div class="sun-indicator" id="sunIndicator">
+                ☀️ <span id="timeDisplay">12:00 PM</span>
+            </div>
+
+            <!-- Season Indicator -->
+            <div class="season-indicator" id="seasonIndicator">
+                <span id="seasonEmoji">☀️</span> <span id="seasonDisplay">Summer</span>
+            </div>
+
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <h3>⚙️ Analysis Controls</h3>
+                
+                <div class="slider-container">
+                    <label class="slider-label">Time: <span id="timeValue">12:00</span></label>
+                    <input type="range" class="slider" id="timeSlider" min="6" max="18" value="12" step="0.5">
+                </div>
+                
+                <div class="slider-container">
+                    <label class="slider-label">Season: <span id="seasonValue">Summer</span></label>
+                    <input type="range" class="slider" id="seasonSlider" min="0" max="3" value="2" step="1">
+                </div>
+
+                <div class="slider-container">
+                    <label class="slider-label">Panel Tilt: <span id="tiltValue">30°</span></label>
+                    <input type="range" class="slider" id="tiltSlider" min="0" max="60" value="30" step="5">
+                </div>
+
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <div style="font-size: 12px; color: #B0B0B0; margin-bottom: 10px;">ENVIRONMENTAL CONDITIONS</div>
+                    <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                        <span style="color: #87CEEB;">Temperature:</span>
+                        <span id="tempDisplay" style="color: #FFD700;">72°F</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                        <span style="color: #87CEEB;">Sun Angle:</span>
+                        <span id="sunAngleDisplay" style="color: #FFD700;">45°</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Panel -->
+            <div class="status-panel">
+                <h3>📊 System Status</h3>
+                
+                <div class="status-item">
+                    <span>Total Panels</span>
+                    <span class="status-value" id="panelCount">0</span>
+                </div>
+                
+                <div class="status-item">
+                    <span>System Capacity</span>
+                    <span class="status-value" id="systemCapacity">0.0 kW</span>
+                </div>
+                
+                <div class="status-item">
+                    <span>Current Output</span>
+                    <span class="status-value" id="currentOutput">0.0 kW</span>
+                </div>
+                
+                <div class="status-item">
+                    <span>Efficiency</span>
+                    <span class="status-value" id="avgEfficiency">0%</span>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <div style="font-size: 12px; color: #B0B0B0; margin-bottom: 5px;">SYSTEM EFFICIENCY</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="efficiencyProgress" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel Library -->
+            <div class="panel-library">
+                <h3>🔋 Panel Library</h3>
+                
+                <div class="panel-item selected" data-panel="standard">
+                    <div style="display: flex; align-items: center;">
+                        <div class="panel-icon">320W</div>
+                        <div>
+                            <div style="font-weight: bold;">Standard Panel</div>
+                            <div style="font-size: 12px; color: #B0B0B0;">$200 • 19.5% eff</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="panel-item" data-panel="premium">
+                    <div style="display: flex; align-items: center;">
+                        <div class="panel-icon" style="background: linear-gradient(135deg, #00FF7F, #32CD32);">400W</div>
+                        <div>
+                            <div style="font-weight: bold;">Premium Panel</div>
+                            <div style="font-size: 12px; color: #B0B0B0;">$300 • 22.1% eff</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="panel-item" data-panel="bifacial">
+                    <div style="display: flex; align-items: center;">
+                        <div class="panel-icon" style="background: linear-gradient(135deg, #FFD700, #FFA500);">450W</div>
+                        <div>
+                            <div style="font-weight: bold;">Bifacial Panel</div>
+                            <div style="font-size: 12px; color: #B0B0B0;">$350 • 21.8% eff</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <button class="action-button" id="clearBtn" style="width: 100%; font-size: 14px; padding: 10px;">
+                        🗑️ Clear All
+                    </button>
+                </div>
+            </div>
+
+            <!-- Financial Display -->
+            <div class="financial-display">
+                <h3>💰 Financial Analysis</h3>
+                
+                <div class="financial-metric">
+                    <div class="metric-value" id="totalCost">$0</div>
+                    <div class="metric-label">Total Cost</div>
+                </div>
+                
+                <div class="financial-metric">
+                    <div class="metric-value" id="annualSavings">$0</div>
+                    <div class="metric-label">Annual Savings</div>
+                </div>
+                
+                <div class="financial-metric">
+                    <div class="metric-value" id="paybackPeriod">-- years</div>
+                    <div class="metric-label">Payback Period</div>
+                </div>
+
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <div style="font-size: 12px; color: #B0B0B0; margin-bottom: 5px;">25-YEAR ROI</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="roiProgress" style="width: 0%"></div>
+                    </div>
+                    <div style="text-align: center; margin-top: 5px; color: #00FF7F; font-weight: bold;" id="roiValue">$0</div>
+                </div>
+            </div>
+
+            <!-- Bottom Controls -->
+            <div class="bottom-controls">
+                <button class="action-button active" id="designBtn">🏠 Design</button>
+                <button class="action-button" id="optimizeBtn">⚡ Optimize</button>
+                <button class="action-button" id="challengeBtn">🎯 Challenge</button>
+                <button class="action-button vr-button" id="vrBtn">🥽 Enter VR</button>
+            </div>
+        </div>
+
+        <!-- Challenge Overlay -->
+        <div class="challenge-overlay" id="challengeOverlay">
+            <h2 style="margin-bottom: 20px;">⚠️ INSTALLATION CHALLENGE</h2>
+            <p id="challengeText">Challenge text will appear here</p>
+            <div style="margin-top: 20px;">
+                <button class="tutorial-button" onclick="solveChallenge('option1')">Option 1</button>
+                <button class="tutorial-button" onclick="solveChallenge('option2')">Option 2</button>
+                <button class="tutorial-button" onclick="solveChallenge('option3')">Option 3</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer, house, roof, solarPanels = [], sun, sunLight;
+        let selectedPanelType = 'standard', timeOfDay = 12, season = 2; // Start with summer
+        let mousePos = new THREE.Vector2(), raycaster = new THREE.Raycaster();
+        let vrSupported = false, vrSession = null;
+        let snowParticles = null, leafParticles = null, rainParticles = null;
+        let trees = [], ground, skyColor;
+        let panelTilt = 30;
+
+        const systemStats = { totalPanels: 0, totalCapacity: 0, avgEfficiency: 0, totalCost: 0, annualSavings: 0, paybackPeriod: 0, roi25Year: 0 };
+        const panelTypes = { 
+            standard: { power: 320, cost: 200, efficiency: 19.5, color: 0x2E5266 },
+            premium: { power: 400, cost: 300, efficiency: 22.1, color: 0x00FF7F },
+            bifacial: { power: 450, cost: 350, efficiency: 21.8, color: 0xFFD700 }
+        };
+
+        const seasonConfig = {
+            0: { // Winter
+                name: 'Winter',
+                emoji: '❄️',
+                groundColor: 0xFFFFFF,
+                skyGradient: [0xE0E0E0, 0xC0C0C0],
+                treeColors: { trunk: 0x5C4033, foliage: 0x8B7355 },
+                fogDensity: 0.01,
+                sunIntensity: 0.7,
+                temperature: 32,
+                particles: 'snow'
+            },
+            1: { // Spring
+                name: 'Spring',
+                emoji: '🌸',
+                groundColor: 0x90EE90,
+                skyGradient: [0x87CEEB, 0xFFE4E1],
+                treeColors: { trunk: 0x8B4513, foliage: 0x98FB98 },
+                fogDensity: 0.005,
+                sunIntensity: 0.9,
+                temperature: 65,
+                particles: 'rain'
+            },
+            2: { // Summer
+                name: 'Summer',
+                emoji: '☀️',
+                groundColor: 0x3CB371,
+                skyGradient: [0x00BFFF, 0x87CEEB],
+                treeColors: { trunk: 0x8B4513, foliage: 0x228B22 },
+                fogDensity: 0.002,
+                sunIntensity: 1.2,
+                temperature: 85,
+                particles: null
+            },
+            3: { // Fall
+                name: 'Fall',
+                emoji: '🍂',
+                groundColor: 0xDAA520,
+                skyGradient: [0xFF8C00, 0xFFE4B5],
+                treeColors: { trunk: 0x654321, foliage: [0xFF6347, 0xFF8C00, 0xFFD700] },
+                fogDensity: 0.008,
+                sunIntensity: 0.8,
+                temperature: 55,
+                particles: 'leaves'
+            }
+        };
+
+        function startSim(role) {
+            document.getElementById('tutorialScreen').style.display = 'none';
+            init();
+        }
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(20, 15, 20);
+
+            const canvas = document.getElementById('canvas');
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.xr.enabled = true;
+
+            createLighting();
+            createEnvironment();
+            createHouse();
+            createSun();
+            setupControls();
+            setupEventListeners();
+            checkVRSupport();
+            updateSeason();
+            animate();
+        }
+
+        function createLighting() {
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+            scene.add(ambientLight);
+            
+            sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 2048;
+            sunLight.shadow.mapSize.height = 2048;
+            sunLight.shadow.camera.near = 0.5;
+            sunLight.shadow.camera.far = 500;
+            sunLight.shadow.camera.left = -50;
+            sunLight.shadow.camera.right = 50;
+            sunLight.shadow.camera.top = 50;
+            sunLight.shadow.camera.bottom = -50;
+            scene.add(sunLight);
+        }
+
+        function createEnvironment() {
+            // Ground
+            const groundGeometry = new THREE.PlaneGeometry(100, 100);
+            const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x3a5f3a });
+            ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+
+            // Trees
+            for (let i = 0; i < 8; i++) {
+                const treeGroup = new THREE.Group();
+                
+                // Trunk
+                const trunk = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.3, 0.5, 4, 8),
+                    new THREE.MeshLambertMaterial({ color: 0x8B4513 })
+                );
+                trunk.position.y = 2;
+                trunk.castShadow = true;
+                treeGroup.add(trunk);
+
+                // Foliage (multiple spheres for more realistic look)
+                const foliageGroup = new THREE.Group();
+                for (let j = 0; j < 5; j++) {
+                    const foliage = new THREE.Mesh(
+                        new THREE.SphereGeometry(1.5 + Math.random() * 0.5, 8, 6),
+                        new THREE.MeshLambertMaterial({ color: 0x228B22 })
+                    );
+                    foliage.position.set(
+                        (Math.random() - 0.5) * 1.5,
+                        5 + (Math.random() - 0.5) * 1,
+                        (Math.random() - 0.5) * 1.5
+                    );
+                    foliage.castShadow = true;
+                    foliageGroup.add(foliage);
+                }
+                
+                treeGroup.add(foliageGroup);
+                treeGroup.position.set(
+                    (Math.random() - 0.5) * 50 + (Math.abs(i - 4) * 8),
+                    0,
+                    (Math.random() - 0.5) * 50 + (Math.abs(i - 4) * 8)
+                );
+                
+                treeGroup.userData = { trunk: trunk, foliageGroup: foliageGroup };
+                trees.push(treeGroup);
+                scene.add(treeGroup);
+            }
+
+            // Sky gradient
+            skyColor = new THREE.Color(0x87CEEB);
+            scene.background = skyColor;
+        }
+
+        function createHouse() {
+            house = new THREE.Group();
+            
+            // House body
+            const houseBody = new THREE.Mesh(
+                new THREE.BoxGeometry(12, 8, 16),
+                new THREE.MeshLambertMaterial({ color: 0xF5F5DC })
+            );
+            houseBody.position.y = 4;
+            houseBody.castShadow = true;
+            houseBody.receiveShadow = true;
+            house.add(houseBody);
+
+            // Windows
+            const windowMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x87CEEB,
+                transparent: true,
+                opacity: 0.7,
+                shininess: 100
+            });
+            
+            // Front windows
+            for (let i = 0; i < 2; i++) {
+                for (let j = 0; j < 2; j++) {
+                    const window = new THREE.Mesh(
+                        new THREE.BoxGeometry(2, 2, 0.1),
+                        windowMaterial
+                    );
+                    window.position.set(-3 + i * 6, 2 + j * 3, 8.05);
+                    house.add(window);
+                }
+            }
+
+            // Door
+            const door = new THREE.Mesh(
+                new THREE.BoxGeometry(2, 4, 0.1),
+                new THREE.MeshLambertMaterial({ color: 0x8B4513 })
+            );
+            door.position.set(0, 2, 8.05);
+            house.add(door);
+
+            // Roof
+            roof = new THREE.Group();
+            const roofSections = [
+                { geo: new THREE.PlaneGeometry(12, 9.6), pos: [0, 10, 2.4], rot: [-0.52, 0, 0], section: 'south' },
+                { geo: new THREE.PlaneGeometry(12, 9.6), pos: [0, 10, -2.4], rot: [0.52, 0, 0], section: 'north' },
+                { geo: new THREE.PlaneGeometry(6.4, 6), pos: [5.4, 9.5, 0], rot: [-1.57, 0, -0.35], section: 'east' },
+                { geo: new THREE.PlaneGeometry(6.4, 6), pos: [-5.4, 9.5, 0], rot: [-1.57, 0, 0.35], section: 'west' }
+            ];
+
+            roofSections.forEach(rs => {
+                const roofSection = new THREE.Mesh(rs.geo, new THREE.MeshLambertMaterial({ color: 0x8B4513 }));
+                roofSection.position.set(...rs.pos);
+                roofSection.rotation.set(...rs.rot);
+                roofSection.receiveShadow = true;
+                roofSection.castShadow = true;
+                roofSection.userData = { section: rs.section, area: rs.geo.parameters.width * rs.geo.parameters.height };
+                roof.add(roofSection);
+            });
+
+            house.add(roof);
+            scene.add(house);
+        }
+
+        function createSun() {
+            sun = new THREE.Mesh(
+                new THREE.SphereGeometry(1, 16, 16),
+                new THREE.MeshBasicMaterial({ 
+                    color: 0xFFD700,
+                    emissive: 0xFFD700,
+                    emissiveIntensity: 0.5
+                })
+            );
+            scene.add(sun);
+            updateSunPosition();
+        }
+
+        function updateSunPosition() {
+            const currentSeason = seasonConfig[season];
+            const hourAngle = ((timeOfDay - 12) / 12) * Math.PI;
+            
+            // Season affects sun elevation
+            const seasonalElevationModifier = 0.7 + (season === 2 ? 0.3 : season === 0 ? -0.3 : 0);
+            const elevation = Math.max(0.1, Math.sin(Math.PI / 3) * Math.cos(hourAngle) * seasonalElevationModifier);
+            
+            const sunDistance = 40;
+            
+            sun.position.set(
+                sunDistance * Math.sin(hourAngle) * Math.cos(elevation),
+                sunDistance * elevation,
+                sunDistance * Math.cos(hourAngle) * Math.cos(elevation)
+            );
+            
+            sunLight.position.copy(sun.position);
+            sunLight.target.position.set(0, 0, 0);
+            sunLight.target.updateMatrixWorld();
+            sunLight.intensity = currentSeason.sunIntensity * (0.5 + elevation);
+
+            // Update UI
+            const hours = Math.floor(timeOfDay);
+            const minutes = Math.round((timeOfDay - hours) * 60);
+            document.getElementById('timeDisplay').textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${hours >= 12 ? 'PM' : 'AM'}`;
+            
+            // Update sun angle display
+            const sunAngle = Math.atan2(elevation, 1) * 180 / Math.PI;
+            document.getElementById('sunAngleDisplay').textContent = `${Math.round(sunAngle)}°`;
+        }
+
+        function updateSeason() {
+            const config = seasonConfig[season];
+            
+            // Update sky color with gradient effect
+            if (config.skyGradient) {
+                const topColor = new THREE.Color(config.skyGradient[0]);
+                const bottomColor = new THREE.Color(config.skyGradient[1]);
+                // Lerp between colors based on time of day
+                const timeFactor = (timeOfDay - 6) / 12;
+                skyColor.lerpColors(bottomColor, topColor, timeFactor);
+                scene.background = skyColor;
+            }
+            
+            // Update ground
+            if (ground) {
+                ground.material.color.setHex(config.groundColor);
+                
+                // Add snow layer in winter
+                if (season === 0) {
+                    if (!ground.userData.snowLayer) {
+                        const snowLayer = new THREE.Mesh(
+                            new THREE.PlaneGeometry(100, 100),
+                            new THREE.MeshLambertMaterial({ 
+                                color: 0xFFFFFF,
+                                transparent: true,
+                                opacity: 0.9
+                            })
+                        );
+                        snowLayer.rotation.x = -Math.PI / 2;
+                        snowLayer.position.y = 0.01;
+                        snowLayer.receiveShadow = true;
+                        scene.add(snowLayer);
+                        ground.userData.snowLayer = snowLayer;
+                    }
+                } else if (ground.userData.snowLayer) {
+                    scene.remove(ground.userData.snowLayer);
+                    delete ground.userData.snowLayer;
+                }
+            }
+            
+            // Update trees
+            trees.forEach(tree => {
+                tree.userData.trunk.material.color.setHex(config.treeColors.trunk);
+                
+                if (Array.isArray(config.treeColors.foliage)) {
+                    // Fall colors - each sphere gets a random fall color
+                    tree.userData.foliageGroup.children.forEach(foliage => {
+                        const colorIndex = Math.floor(Math.random() * config.treeColors.foliage.length);
+                        foliage.material.color.setHex(config.treeColors.foliage[colorIndex]);
+                    });
+                } else if (season === 0) {
+                    // Winter - bare trees
+                    tree.userData.foliageGroup.children.forEach(foliage => {
+                        foliage.visible = Math.random() > 0.8; // Keep some foliage
+                        if (foliage.visible) {
+                            foliage.material.color.setHex(config.treeColors.foliage);
+                        }
+                    });
+                } else {
+                    // Spring/Summer - full foliage
+                    tree.userData.foliageGroup.children.forEach(foliage => {
+                        foliage.visible = true;
+                        foliage.material.color.setHex(config.treeColors.foliage);
+                    });
+                }
+            });
+            
+            // Update fog
+            if (config.fogDensity > 0) {
+                scene.fog = new THREE.Fog(skyColor, 10, 150 / config.fogDensity);
+            } else {
+                scene.fog = null;
+            }
+            
+            // Clear existing particles
+            if (snowParticles) {
+                scene.remove(snowParticles);
+                snowParticles = null;
+            }
+            if (leafParticles) {
+                scene.remove(leafParticles);
+                leafParticles = null;
+            }
+            if (rainParticles) {
+                scene.remove(rainParticles);
+                rainParticles = null;
+            }
+            
+            // Create seasonal particles
+            if (config.particles === 'snow') {
+                createSnowParticles();
+            } else if (config.particles === 'leaves') {
+                createLeafParticles();
+            } else if (config.particles === 'rain') {
+                createRainParticles();
+            }
+            
+            // Update UI
+            document.getElementById('seasonDisplay').textContent = config.name;
+            document.getElementById('seasonEmoji').textContent = config.emoji;
+            document.getElementById('tempDisplay').textContent = `${config.temperature}°F`;
+            
+            // Update solar panel efficiency based on temperature
+            updateSystemStats();
+        }
+
+        function createSnowParticles() {
+            const particleCount = 1000;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const velocities = new Float32Array(particleCount * 3);
+            
+            for (let i = 0; i < particleCount; i++) {
+                const i3 = i * 3;
+                positions[i3] = (Math.random() - 0.5) * 100;
+                positions[i3 + 1] = Math.random() * 50;
+                positions[i3 + 2] = (Math.random() - 0.5) * 100;
+                
+                velocities[i3] = (Math.random() - 0.5) * 0.1;
+                velocities[i3 + 1] = -0.1 - Math.random() * 0.2;
+                velocities[i3 + 2] = (Math.random() - 0.5) * 0.1;
+            }
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            
+            const material = new THREE.PointsMaterial({
+                color: 0xFFFFFF,
+                size: 0.3,
+                transparent: true,
+                opacity: 0.8
+            });
+            
+            snowParticles = new THREE.Points(geometry, material);
+            snowParticles.userData.velocities = velocities;
+            scene.add(snowParticles);
+        }
+
+        function createLeafParticles() {
+            const particleCount = 200;
+            const leaves = new THREE.Group();
+            
+            for (let i = 0; i < particleCount; i++) {
+                const leafGeometry = new THREE.PlaneGeometry(0.5, 0.5);
+                const leafColor = seasonConfig[3].treeColors.foliage[Math.floor(Math.random() * 3)];
+                const leafMaterial = new THREE.MeshBasicMaterial({
+                    color: leafColor,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                
+                const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
+                leaf.position.set(
+                    (Math.random() - 0.5) * 100,
+                    Math.random() * 30 + 10,
+                    (Math.random() - 0.5) * 100
+                );
+                leaf.rotation.set(
+                    Math.random() * Math.PI,
+                    Math.random() * Math.PI,
+                    Math.random() * Math.PI
+                );
+                
+                leaf.userData.velocity = {
+                    x: (Math.random() - 0.5) * 0.2,
+                    y: -0.05 - Math.random() * 0.1,
+                    z: (Math.random() - 0.5) * 0.2,
+                    rotation: (Math.random() - 0.5) * 0.05
+                };
+                
+                leaves.add(leaf);
+            }
+            
+            leafParticles = leaves;
+            scene.add(leafParticles);
+        }
+
+        function createRainParticles() {
+            const particleCount = 2000;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const velocities = new Float32Array(particleCount * 3);
+            
+            for (let i = 0; i < particleCount; i++) {
+                const i3 = i * 3;
+                positions[i3] = (Math.random() - 0.5) * 100;
+                positions[i3 + 1] = Math.random() * 50;
+                positions[i3 + 2] = (Math.random() - 0.5) * 100;
+                
+                velocities[i3] = 0;
+                velocities[i3 + 1] = -5 - Math.random() * 5;
+                velocities[i3 + 2] = 0;
+            }
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            
+            const material = new THREE.PointsMaterial({
+                color: 0x4169E1,
+                size: 0.1,
+                transparent: true,
+                opacity: 0.6
+            });
+            
+            rainParticles = new THREE.Points(geometry, material);
+            rainParticles.userData.velocities = velocities;
+            scene.add(rainParticles);
+        }
+
+        function animateParticles() {
+            // Animate snow
+            if (snowParticles) {
+                const positions = snowParticles.geometry.attributes.position.array;
+                const velocities = snowParticles.userData.velocities;
+                
+                for (let i = 0; i < positions.length; i += 3) {
+                    positions[i] += velocities[i];
+                    positions[i + 1] += velocities[i + 1];
+                    positions[i + 2] += velocities[i + 2];
+                    
+                    // Add some swaying motion
+                    positions[i] += Math.sin(Date.now() * 0.001 + i) * 0.01;
+                    
+                    // Reset if below ground
+                    if (positions[i + 1] < 0) {
+                        positions[i + 1] = 50;
+                        positions[i] = (Math.random() - 0.5) * 100;
+                        positions[i + 2] = (Math.random() - 0.5) * 100;
+                    }
+                }
+                snowParticles.geometry.attributes.position.needsUpdate = true;
+            }
+            
+            // Animate leaves
+            if (leafParticles) {
+                leafParticles.children.forEach(leaf => {
+                    leaf.position.x += leaf.userData.velocity.x;
+                    leaf.position.y += leaf.userData.velocity.y;
+                    leaf.position.z += leaf.userData.velocity.z;
+                    
+                    leaf.rotation.x += leaf.userData.velocity.rotation;
+                    leaf.rotation.y += leaf.userData.velocity.rotation * 0.5;
+                    
+                    // Add swaying
+                    leaf.position.x += Math.sin(Date.now() * 0.001 + leaf.position.y) * 0.02;
+                    
+                    // Reset if below ground
+                    if (leaf.position.y < 0) {
+                        leaf.position.y = 30 + Math.random() * 10;
+                        leaf.position.x = (Math.random() - 0.5) * 100;
+                        leaf.position.z = (Math.random() - 0.5) * 100;
+                    }
+                });
+            }
+            
+            // Animate rain
+            if (rainParticles) {
+                const positions = rainParticles.geometry.attributes.position.array;
+                const velocities = rainParticles.userData.velocities;
+                
+                for (let i = 0; i < positions.length; i += 3) {
+                    positions[i + 1] += velocities[i + 1];
+                    
+                    // Reset if below ground
+                    if (positions[i + 1] < 0) {
+                        positions[i + 1] = 50;
+                        positions[i] = (Math.random() - 0.5) * 100;
+                        positions[i + 2] = (Math.random() - 0.5) * 100;
+                    }
+                }
+                rainParticles.geometry.attributes.position.needsUpdate = true;
+            }
+        }
+
+        function setupControls() {
+            let mouseDown = false, mouseX = 0, mouseY = 0;
+
+            canvas.addEventListener('mousedown', (e) => {
+                mouseDown = true;
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            });
+
+            document.addEventListener('mouseup', (e) => {
+                if (mouseDown && Math.abs(e.clientX - mouseX) < 5 && Math.abs(e.clientY - mouseY) < 5) {
+                    handleClick(e);
+                }
+                mouseDown = false;
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                mousePos.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mousePos.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+                if (mouseDown) {
+                    const deltaX = e.clientX - mouseX;
+                    const deltaY = e.clientY - mouseY;
+                    const spherical = new THREE.Spherical();
+                    spherical.setFromVector3(camera.position);
+                    spherical.theta -= deltaX * 0.01;
+                    spherical.phi += deltaY * 0.01;
+                    spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
+                    camera.position.setFromSpherical(spherical);
+                    camera.lookAt(0, 5, 0);
+                    mouseX = e.clientX;
+                    mouseY = e.clientY;
+                }
+            });
+
+            // Mouse wheel zoom
+            canvas.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const zoomSpeed = 1.1;
+                if (e.deltaY < 0) {
+                    camera.position.multiplyScalar(1 / zoomSpeed);
+                } else {
+                    camera.position.multiplyScalar(zoomSpeed);
+                }
+                // Limit zoom
+                const distance = camera.position.length();
+                if (distance < 10) {
+                    camera.position.normalize().multiplyScalar(10);
+                } else if (distance > 100) {
+                    camera.position.normalize().multiplyScalar(100);
+                }
+            });
+        }
+
+        function handleClick(event) {
+            raycaster.setFromCamera(mousePos, camera);
+            const intersects = raycaster.intersectObjects(roof.children);
+            if (intersects.length > 0) {
+                const intersection = intersects[0];
+                const position = intersection.point.clone();
+                position.add(intersection.face.normal.clone().transformDirection(intersection.object.matrixWorld).multiplyScalar(0.1));
+                placeSolarPanel(position, intersection.object);
+            }
+        }
+
+        function placeSolarPanel(position, roofSection) {
+            const panelType = panelTypes[selectedPanelType];
+            const panel = new THREE.Mesh(
+                new THREE.BoxGeometry(2, 0.1, 1),
+                new THREE.MeshLambertMaterial({ 
+                    color: panelType.color,
+                    transparent: true,
+                    opacity: 0.9
+                })
+            );
+            panel.position.copy(position);
+            
+            // Apply tilt based on user setting and roof angle
+            panel.rotation.copy(roofSection.rotation);
+            
+            panel.castShadow = true;
+            panel.receiveShadow = true;
+            panel.userData = {
+                type: selectedPanelType,
+                power: panelType.power,
+                cost: panelType.cost,
+                efficiency: panelType.efficiency,
+                roofSection: roofSection.userData.section,
+                tilt: panelTilt
+            };
+            scene.add(panel);
+            solarPanels.push(panel);
+            updateSystemStats();
+        }
+
+        function calculateCurrentOutput() {
+            let totalOutput = 0;
+            const currentSeason = seasonConfig[season];
+            
+            solarPanels.forEach(panel => {
+                let output = panel.userData.power;
+                
+                // Time of day factor (peak at noon)
+                const timeFactor = 1 - Math.abs(timeOfDay - 12) / 6 * 0.5;
+                output *= timeFactor;
+                
+                // Season factor
+                const seasonFactors = { 0: 0.6, 1: 0.85, 2: 1.0, 3: 0.75 };
+                output *= seasonFactors[season];
+                
+                // Temperature efficiency loss (panels less efficient when too hot or cold)
+                const optimalTemp = 77; // 77°F is optimal for solar panels
+                const tempLoss = Math.abs(currentSeason.temperature - optimalTemp) * 0.004;
+                output *= (1 - tempLoss);
+                
+                // Shadow calculation (simplified)
+                raycaster.set(panel.position, sun.position.clone().sub(panel.position).normalize());
+                const shadowIntersects = raycaster.intersectObjects(trees.map(t => t.children).flat());
+                if (shadowIntersects.length > 0) {
+                    output *= 0.3; // 70% reduction from shadows
+                }
+                
+                // Snow coverage in winter
+                if (season === 0 && panel.position.y < 12) {
+                    output *= 0.2; // 80% reduction from snow coverage
+                }
+                
+                totalOutput += output;
+            });
+            
+            return totalOutput / 1000; // Convert to kW
+        }
+
+        function updateSystemStats() {
+            systemStats.totalPanels = solarPanels.length;
+            systemStats.totalCapacity = solarPanels.reduce((total, panel) => total + panel.userData.power, 0) / 1000;
+            systemStats.avgEfficiency = solarPanels.length > 0 ? 
+                solarPanels.reduce((total, panel) => total + panel.userData.efficiency, 0) / solarPanels.length : 0;
+            
+            const equipmentCost = solarPanels.reduce((total, panel) => total + panel.userData.cost, 0);
+            systemStats.totalCost = equipmentCost * 1.8 + Math.max(500, systemStats.totalCapacity * 100);
+            
+            // Annual production varies by location and season
+            const annualProduction = systemStats.totalCapacity * 1200 * (systemStats.avgEfficiency / 100);
+            systemStats.annualSavings = annualProduction * 0.15;
+            
+            const netCost = systemStats.totalCost * 0.7; // After incentives
+            systemStats.paybackPeriod = systemStats.annualSavings > 0 ? netCost / systemStats.annualSavings : 0;
+            
+            let totalSavings = 0;
+            for (let year = 1; year <= 25; year++) {
+                totalSavings += systemStats.annualSavings * Math.pow(0.995, year - 1); // 0.5% degradation per year
+            }
+            systemStats.roi25Year = totalSavings - netCost;
+            
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('panelCount').textContent = systemStats.totalPanels;
+            document.getElementById('systemCapacity').textContent = systemStats.totalCapacity.toFixed(1) + ' kW';
+            document.getElementById('currentOutput').textContent = calculateCurrentOutput().toFixed(1) + ' kW';
+            document.getElementById('avgEfficiency').textContent = systemStats.avgEfficiency.toFixed(0) + '%';
+            document.getElementById('totalCost').textContent = '$' + Math.round(systemStats.totalCost).toLocaleString();
+            document.getElementById('annualSavings').textContent = '$' + Math.round(systemStats.annualSavings).toLocaleString();
+            document.getElementById('paybackPeriod').textContent = systemStats.paybackPeriod > 0 && systemStats.paybackPeriod < 50 ? 
+                systemStats.paybackPeriod.toFixed(1) + ' years' : '-- years';
+            document.getElementById('roiValue').textContent = '$' + Math.round(systemStats.roi25Year).toLocaleString();
+            document.getElementById('efficiencyProgress').style.width = Math.min(100, systemStats.avgEfficiency) + '%';
+            document.getElementById('roiProgress').style.width = Math.min(100, Math.max(0, (systemStats.roi25Year + 20000) / 80000 * 100)) + '%';
+        }
+
+        function setupEventListeners() {
+            document.getElementById('timeSlider').addEventListener('input', (e) => {
+                timeOfDay = parseFloat(e.target.value);
+                const hours = Math.floor(timeOfDay);
+                const minutes = Math.round((timeOfDay - hours) * 60);
+                document.getElementById('timeValue').textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+                updateSunPosition();
+                updateSystemStats();
+            });
+
+            document.getElementById('seasonSlider').addEventListener('input', (e) => {
+                season = parseInt(e.target.value);
+                document.getElementById('seasonValue').textContent = seasonConfig[season].name;
+                updateSeason();
+                updateSunPosition();
+            });
+
+            document.getElementById('tiltSlider').addEventListener('input', (e) => {
+                panelTilt = parseInt(e.target.value);
+                document.getElementById('tiltValue').textContent = `${panelTilt}°`;
+                // Update existing panels' tilt
+                solarPanels.forEach(panel => {
+                    panel.userData.tilt = panelTilt;
+                });
+                updateSystemStats();
+            });
+
+            document.querySelectorAll('.panel-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    selectedPanelType = item.dataset.panel;
+                    document.querySelectorAll('.panel-item').forEach(i => i.classList.remove('selected'));
+                    item.classList.add('selected');
+                });
+            });
+
+            document.getElementById('clearBtn').addEventListener('click', () => {
+                solarPanels.forEach(panel => scene.remove(panel));
+                solarPanels = [];
+                updateSystemStats();
+            });
+
+            document.getElementById('optimizeBtn').addEventListener('click', () => {
+                solarPanels.forEach(panel => scene.remove(panel));
+                solarPanels = [];
+                selectedPanelType = 'premium';
+                
+                // Optimal placement on south-facing roof
+                for (let x = -4; x <= 4; x += 2.5) {
+                    for (let z = -3; z <= 3; z += 1.5) {
+                        const position = new THREE.Vector3(x, 10.5, z + 1);
+                        const panelType = panelTypes.premium;
+                        const panel = new THREE.Mesh(
+                            new THREE.BoxGeometry(2, 0.1, 1),
+                            new THREE.MeshLambertMaterial({ 
+                                color: panelType.color,
+                                transparent: true,
+                                opacity: 0.9
+                            })
+                        );
+                        panel.position.copy(position);
+                        panel.rotation.x = -0.52; // Match south roof angle
+                        panel.castShadow = true;
+                        panel.receiveShadow = true;
+                        panel.userData = { 
+                            type: 'premium',
+                            power: panelType.power,
+                            cost: panelType.cost,
+                            efficiency: panelType.efficiency,
+                            roofSection: 'south',
+                            tilt: 30
+                        };
+                        scene.add(panel);
+                        solarPanels.push(panel);
+                    }
+                }
+                updateSystemStats();
+            });
+
+            document.getElementById('challengeBtn').addEventListener('click', () => {
+                const challenges = [
+                    { 
+                        text: "Winter snow has covered 80% of your panels. What's your solution?",
+                        options: ["Install Snow Guards", "Manual Removal", "Wait for Melt"]
+                    },
+                    { 
+                        text: "Fall leaves are accumulating on panels, reducing efficiency by 25%. How do you handle this?",
+                        options: ["Leaf Blower System", "Regular Cleaning", "Tree Trimming"]
+                    },
+                    {
+                        text: "Summer heat is causing 15% efficiency loss. What's your recommendation?",
+                        options: ["Cooling System", "Elevated Mounting", "Accept Loss"]
+                    }
+                ];
+                const challenge = challenges[Math.floor(Math.random() * challenges.length)];
+                document.getElementById('challengeText').textContent = challenge.text;
+                
+                const buttons = document.querySelectorAll('#challengeOverlay button');
+                challenge.options.forEach((option, index) => {
+                    if (buttons[index + 1]) { // Skip the first button (title)
+                        buttons[index + 1].textContent = option;
+                    }
+                });
+                
+                document.getElementById('challengeOverlay').style.display = 'block';
+            });
+
+            document.getElementById('vrBtn').addEventListener('click', enterVR);
+            
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        function checkVRSupport() {
+            if ('xr' in navigator) {
+                navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
+                    vrSupported = supported;
+                    const vrBtn = document.getElementById('vrBtn');
+                    if (!supported) {
+                        vrBtn.textContent = '🥽 VR Not Available';
+                        vrBtn.disabled = true;
+                        vrBtn.style.background = 'linear-gradient(135deg, #666, #888)';
+                    }
+                }).catch(() => {
+                    vrSupported = false;
+                });
+            }
+        }
+
+        function enterVR() {
+            if (!vrSupported) {
+                alert('VR not supported on this device');
+                return;
+            }
+            
+            navigator.xr.requestSession('immersive-vr').then((session) => {
+                vrSession = session;
+                renderer.xr.setSession(session);
+                document.querySelector('.ui-layer').style.display = 'none';
+                
+                session.addEventListener('end', () => {
+                    vrSession = null;
+                    document.querySelector('.ui-layer').style.display = 'block';
+                });
+            }).catch((error) => {
+                alert('Failed to start VR session: ' + error.message);
+            });
+        }
+
+        function solveChallenge(option) {
+            document.getElementById('challengeOverlay').style.display = 'none';
+            // In a real application, this would track the user's choice and provide feedback
+        }
+
+        function animate() {
+            renderer.setAnimationLoop(() => {
+                // Animate seasonal particles
+                animateParticles();
+                
+                // Update current output display continuously
+                if (solarPanels.length > 0 && Date.now() % 500 < 16) { // Update twice per second
+                    document.getElementById('currentOutput').textContent = calculateCurrentOutput().toFixed(1) + ' kW';
+                }
+                
+                renderer.render(scene, camera);
+            });
+        }
+
+        window.startSim = startSim;
+        window.solveChallenge = solveChallenge;
+    </script>
+</body>
+</html>
